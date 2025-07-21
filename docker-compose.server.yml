@@ -1,0 +1,80 @@
+# docker-compose.server.yml
+# 서버 환경용 단순화된 설정 (npm 환경 호환)
+# 사용법: docker-compose -f docker-compose.server.yml up -d
+
+# version 필드는 최신 Docker Compose에서 deprecated되어 제거 가능
+# version: '3.8'
+
+services:
+  pdf2md:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: runner
+    image: pdf2md:latest
+    container_name: pdf2md
+    restart: unless-stopped
+    ports:
+      - '127.0.0.1:YOUR_PORT:3000'  # 예: 3002
+    environment:
+      - NODE_ENV=production
+      - NEXT_TELEMETRY_DISABLED=1
+      - UPLOAD_DIR=/app/uploads
+      - MISTRAL_API_KEY=${MISTRAL_API_KEY}
+      # npm 환경용 설정
+      - NEXT_PUBLIC_APP_URL=https://YOUR_DOMAIN.com
+      - GENERIC_TIMEZONE=Asia/Seoul
+    volumes:
+      # 데이터 저장 (실제 경로로 수정 필요)
+      - /path/to/your/data:/app/uploads
+      # 로그 저장
+      - /path/to/your/data/logs:/app/logs
+    # 리소스 제한
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+    # 로그 설정
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "3"
+    networks:
+      - npm_default
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  # 선택사항: 백업 서비스
+  backup:
+    image: alpine:latest
+    container_name: pdf2md-backup
+    restart: "no"
+    volumes:
+      - /path/to/your/data:/backup/data:ro
+      - /path/to/your/data/backups:/backup/output
+    environment:
+      - BACKUP_RETENTION_DAYS=30
+    command: >
+      sh -c "
+        apk add --no-cache tar gzip
+        echo '0 2 * * * cd /backup && tar -czf output/pdf2md-backup-$(date +%Y%m%d-%H%M%S).tar.gz data/' > /etc/crontabs/root
+        echo 'Backup service started. Running daily at 2 AM.'
+        crond -f
+      "
+    profiles:
+      - backup
+    networks:
+      - npm_default
+
+networks:
+  npm_default:
+    external: true 

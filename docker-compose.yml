@@ -1,0 +1,64 @@
+version: '3.8'
+
+services:
+  pdf2md:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: runner
+    container_name: pdf2md-app
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - NEXT_TELEMETRY_DISABLED=1
+      - UPLOAD_DIR=/app/uploads
+      # Mistral AI API 키 (실제 값은 .env 파일에서 설정)
+      - MISTRAL_API_KEY=${MISTRAL_API_KEY}
+    volumes:
+      # 업로드된 파일을 호스트에 영구 저장
+      - ./uploads:/app/uploads
+      # 로그 파일 (선택사항)
+      - ./logs:/app/logs
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - pdf2md-network
+
+  # 개발용 서비스 (선택사항)
+  pdf2md-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: base
+    container_name: pdf2md-dev
+    restart: "no"
+    ports:
+      - "3001:3000"
+    environment:
+      - NODE_ENV=development
+      - UPLOAD_DIR=/app/uploads
+      - MISTRAL_API_KEY=${MISTRAL_API_KEY}
+    volumes:
+      # 소스 코드 마운트 (개발용)
+      - .:/app
+      - /app/node_modules
+      - ./uploads:/app/uploads
+    command: npm run dev
+    profiles:
+      - dev
+    networks:
+      - pdf2md-network
+
+networks:
+  pdf2md-network:
+    driver: bridge
+
+volumes:
+  uploads:
+    driver: local 

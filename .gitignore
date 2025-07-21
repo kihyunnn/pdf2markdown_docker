@@ -42,3 +42,6 @@ yarn-error.log*
 next-env.d.ts
 
 pnpm-lock.yaml
+
+# 개인 배포 설정 (민감한 정보 포함)
+DEPLOYMENT_CONFIG.md

@@ -1,187 +1,237 @@
-[日本語版 readme はこちら](./README-ja.md)
+# PDF to Markdown Converter
 
-# PDF to Markdown
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Docker](https://img.shields.io/badge/Docker-Supported-blue)](https://docker.com)
 
-This application is a tool for uploading PDF files and analyzing their content using Mistral AI's OCR capabilities.
+> 📖 **한국어**: [README-ko.md](./README-ko.md) | **日本語**: [README-ja.md](./README-ja.md)
 
-## Getting Mistral AI API Key
+A powerful Next.js application that converts PDF files to Markdown using Mistral AI's OCR capabilities. This project supports both Vercel cloud deployment and self-hosted Docker deployment.
 
-1. Access [Mistral AI](https://mistral.ai/) to create an account or log in
-2. Generate an API key from the dashboard
-3. Store the generated API key securely
+## 📖 About This Project
 
-## Vercel Blob Setup
+This is a modified version of [pdf2md](https://github.com/link2004/pdf2md) by riku ogawa, enhanced with:
 
-Before deploying the application, you need to set up Vercel Blob storage:
+- 🐳 **Docker deployment support** with nginx proxy
+- 📁 **Local file storage** (alternative to Vercel Blob)
+- 🔧 **Nginx Proxy Manager compatibility**
+- 🛡️ **Production-ready security configurations**
+- 📊 **Monitoring and backup capabilities**
+- 🌏 **Korean server environment optimizations**
 
-1. **Create a Vercel project**
+## ✨ Features
 
-   - Access [Vercel](https://vercel.com/) to sign up/log in
-   - Click "New Project" to create a new project
+- 📄 **PDF Upload**: Support for PDF files up to 100MB
+- 🤖 **AI-Powered OCR**: Uses Mistral AI for accurate text extraction
+- 📝 **Markdown Conversion**: Converts extracted text to clean Markdown
+- ✏️ **Live Editor**: Edit and preview Markdown in real-time
+- 💾 **Multiple Export Formats**: Download as .md, .html, or .pdf
+- 🔄 **Batch Processing**: Handle multiple files simultaneously
+- 🐳 **Docker Ready**: Easy deployment with Docker Compose
 
-2. **Create a Vercel Blob store**
+## 🚀 Quick Start
 
-   - Select the "Storage" tab in the project dashboard
-   - Click the "Connect Database" button
-   - Select "Blob" in the "Create New" tab and click the "Continue" button
-   - Configure the following settings:
-     - Name: Any name (e.g., "PDF Storage")
-     - Select "Create a new Blob store"
-     - Select the environments where you want to add environment variables (typically all environments)
-     - Optionally change the environment variable prefix in "Advanced Options"
-   - Click the "Create" button to create the store
+### Cloud Deployment (Vercel)
 
-3. **Set up environment variables**
+1. **Get Mistral AI API Key**
+   - Visit [Mistral AI](https://mistral.ai/) and create an account
+   - Generate an API key from the dashboard
 
-   - When the Blob store is created, the following environment variable will be automatically added to your project:
-     - `BLOB_READ_WRITE_TOKEN`
-   - To use this environment variable in your local development environment, pull the environment variables using Vercel CLI:
-     ```bash
-     vercel env pull
-     ```
+2. **Set up Vercel Blob Storage**
+   - Create a new Vercel project
+   - Add Blob storage in the Storage tab
+   - Configure environment variables
 
-Once these settings are complete, you can proceed with deploying the application.
-
-## Deploy on Vercel
-
-Follow these steps to deploy the application on Vercel:
-
-1. **Clone the repository**
-
+3. **Deploy**
    ```bash
    git clone https://github.com/link2004/pdf2md.git
    cd pdf2md
-   ```
-
-2. **Copy the .env.example file**
-
-   ```bash
    cp .env.example .env
+   # Add your MISTRAL_API_KEY and BLOB_READ_WRITE_TOKEN
+   vercel deploy
    ```
 
-3. **Set up the required environment variables in the .env file**
+### 🐳 Docker Deployment (Self-Hosted)
 
-   - Get `BLOB_READ_WRITE_TOKEN` from your Vercel dashboard and set it
-   - Get `MISTRAL_API_KEY` from your Mistral AI account and set it
+Perfect for private servers with nginx proxy manager:
 
+#### Prerequisites
+- Docker & Docker Compose
+- Nginx Proxy Manager (or similar reverse proxy)
+- External network: `npm_default`
+
+#### Quick Setup
+
+1. **Copy configuration files**
+   ```bash
+   cp env.server.example .env
+   cp docker-compose.server.yml docker-compose.yml
    ```
-   MISTRAL_API_KEY=your_mistral_api_key
-   BLOB_READ_WRITE_TOKEN=your_blob_read_write_token
+
+2. **Edit environment variables**
+   ```bash
+   nano .env
+   # Set your MISTRAL_API_KEY and domain
    ```
 
-4. **Deploy to Vercel**
+3. **Update paths in docker-compose.yml**
+   ```yaml
+   volumes:
+     - /path/to/your/data:/app/uploads        # Your data path
+     - /path/to/your/data/logs:/app/logs      # Your logs path
+   
+   ports:
+     - '127.0.0.1:YOUR_PORT:3000'             # Your port (e.g., 3002)
+   ```
 
-   - Log in or create an account on [Vercel](https://vercel.com)
-   - Click on "New Project"
-   - Import your repository from GitHub
-   - Add the same environment variables as in your `.env` file in the "Environment Variables" section
-   - Click on the "Deploy" button
+4. **Create data directories**
+   ```bash
+   sudo mkdir -p /path/to/your/data/{logs,backups}
+   sudo chown -R $USER:$USER /path/to/your/data
+   ```
 
-5. **Verify the deployment**
-   - Once deployment is complete, access the provided URL to confirm that the application is working properly
+5. **Deploy**
+   ```bash
+   # Basic service
+   docker-compose up -d
+   
+   # With backup service
+   docker-compose --profile backup up -d
+   ```
 
-Note: Environment variables contain sensitive information, so do not commit your `.env` file to public repositories like GitHub. Instead, set the environment variables directly in the Vercel dashboard.
+6. **Configure Nginx Proxy Manager**
+   - Target: `http://127.0.0.1:YOUR_PORT`
+   - Domain: `your-domain.com`
+   - SSL: Enable Let's Encrypt
 
-## Features
+For detailed deployment instructions, see [README-DOCKER.md](./README-DOCKER.md)
 
-- PDF file upload
-- PDF storage in Vercel Blob
-- PDF analysis using Mistral AI's OCR capabilities
-- Display and editing of analysis results
-- Export functionality in Markdown format
+## 🔧 Development
 
-## Environment Setup
-
-Set the following environment variables in your `.env.local` file:
-
-```
-# Vercel Blob settings
-BLOB_READ_WRITE_TOKEN=your_blob_read_write_token
-
-# Mistral AI settings
-MISTRAL_API_KEY=your_mistral_api_key
-```
-
-## Using the Application
-
-### Initial Setup
-
-1. Access the application and register/login if required
-2. Create a "New Project" from the home page
-
-### Uploading and Analyzing PDFs
-
-1. Click on the "Upload PDF" button to open the file selection dialog
-2. Select the PDF file you want to analyze (multiple files are also supported)
-   - Note: For server uploads, file size must be 20MB or less
-   - Try clearing your browser cache if you encounter issues
-3. Click on the "Upload" button to upload the PDF to Vercel Blob storage
-4. After the upload is complete, click on the "Analyze with Mistral AI" button
-5. Wait a few seconds to minutes for the analysis to complete (depending on the size and complexity of the PDF)
-
-### Reviewing and Editing Analysis Results
-
-1. The analysis results will be automatically displayed in Markdown format
-2. You can freely edit the content in the text editor
-3. Click on the "Save" button to save your edits
-4. Use the "Preview" tab to see how the Markdown will be rendered
-
-### Exporting Markdown
-
-1. Click on the "Export" button and select the export format:
-   - Markdown file (.md)
-   - HTML (.html)
-   - PDF (.pdf)
-2. The file will be downloaded in your selected format
-
-### Project Management
-
-1. Access past analysis results from the "Projects" tab
-2. Each project is automatically saved, and you can resume editing at any time
-3. Share your projects with other users using the "Share" button
-
-## Requirements
-
-- Node.js 18 or higher
-- Vercel account (with Blob store set up)
-- Mistral AI account and API key
-
-## Installation
+### Local Development
 
 ```bash
 # Install dependencies
 npm install
 
-# Run the development server
+# Run development server
 npm run dev
+
+# Build for production
+npm run build
+
+# Start production server
+npm start
 ```
 
-## Technology Stack
+### Testing
 
-- Next.js
-- TypeScript
-- Vercel Blob (storage)
-- Mistral AI (OCR processing)
-- TailwindCSS (styling)
-- React Markdown (markdown rendering)
+```bash
+# Run tests
+npm test
 
-## Troubleshooting
+# Run tests in watch mode
+npm test:watch
 
-- **Unable to upload PDF**
+# Run integration tests
+npm run test:integration
+```
 
-  - Ensure the file size is 20MB or less (for server uploads)
-  - Try clearing your browser cache
+## 📋 Environment Variables
 
-- **Analysis fails**
+### Required
+- `MISTRAL_API_KEY`: Your Mistral AI API key
 
-  - Check if the PDF is encrypted
-  - For scanned PDFs, check if the image quality is sufficient
+### For Vercel Deployment
+- `BLOB_READ_WRITE_TOKEN`: Vercel Blob storage token
 
-- **API errors displayed**
-  - Verify that environment variables are correctly set
-  - Check the expiration date and usage limits of your Mistral API key
-  - Ensure that your Vercel Blob token is valid
+### For Docker Deployment
+- `NEXT_PUBLIC_APP_URL`: Your domain URL
+- `UPLOAD_DIR`: Upload directory path (default: `/app/uploads`)
 
-## License
+### Optional
+- `NODE_ENV`: Environment (development/production)
+- `NEXT_TELEMETRY_DISABLED`: Disable Next.js telemetry
+- `BACKUP_RETENTION_DAYS`: Backup retention period (default: 30)
 
-This project is released under the MIT License. See the [LICENSE](./LICENSE) file for details.
+## 🏗️ Architecture
+
+### Cloud Architecture (Vercel)
+```
+Internet → Vercel Edge → Next.js App → Mistral AI
+                     ↓
+                Vercel Blob Storage
+```
+
+### Self-Hosted Architecture (Docker)
+```
+Internet → Nginx Proxy → Next.js Container → Mistral AI
+                      ↓
+                Local File System
+```
+
+## 📊 Monitoring & Management
+
+### Docker Deployment Features
+- 🔍 **Health Checks**: Automatic container health monitoring
+- 📊 **Prometheus Metrics**: Optional monitoring stack
+- 📈 **Grafana Dashboards**: Visual monitoring interface
+- 📝 **Log Aggregation**: Centralized logging with Loki
+- 💾 **Automated Backups**: Daily backup with retention policy
+
+### Management Commands
+```bash
+# View logs
+docker logs pdf2md
+
+# Check health
+curl http://localhost:YOUR_PORT/api/health
+
+# Manual backup
+docker-compose --profile backup run --rm backup
+
+# Update application
+docker-compose up --build -d
+```
+
+## 🛡️ Security Features
+
+- 🔐 **File Type Validation**: Only PDF files allowed
+- 📏 **Size Limits**: 100MB maximum file size
+- 🛡️ **Security Headers**: Comprehensive security headers
+- 🚫 **Rate Limiting**: API and upload rate limiting
+- 🔒 **SSL/TLS**: Automatic HTTPS with Let's Encrypt
+- 👤 **Non-root Containers**: Secure container execution
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 🙏 Acknowledgments
+
+- Original project by [riku ogawa](https://github.com/link2004/pdf2md)
+- [Mistral AI](https://mistral.ai/) for OCR capabilities
+- [Next.js](https://nextjs.org/) framework
+- [Vercel](https://vercel.com/) for cloud hosting platform
+
+## 🆘 Support
+
+- 📖 [Documentation](./README-DOCKER.md)
+- 🐛 [Report Issues](https://github.com/your-username/pdf2md/issues)
+- 💬 [Discussions](https://github.com/your-username/pdf2md/discussions)
+
+## 🗃️ Version History
+
+- **v1.1.0** - Added Docker support and local file storage
+- **v1.0.0** - Original Vercel-based deployment (by riku ogawa)
+
+---
+
+**🌟 Star this repository if you find it helpful!**

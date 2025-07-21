@@ -1,0 +1,20 @@
+# docker-compose.override.yml
+# 로컬 개발 환경용 설정 (docker-compose up 시 자동으로 적용됨)
+
+version: '3.8'
+
+services:
+  pdf2md:
+    # 개발 환경에서는 builder 스테이지 사용 (의존성 포함)
+    build:
+      target: builder
+    environment:
+      - NODE_ENV=development
+    volumes:
+      # 개발 시 소스 코드 실시간 반영
+      - .:/app
+      - /app/node_modules
+      - /app/.next
+    command: sh -c "npm install && npm run dev"
+    # 개발 환경에서는 재시작 안함
+    restart: "no" 

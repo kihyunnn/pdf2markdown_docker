@@ -1,16 +1,24 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
+import dynamic from 'next/dynamic';
 import { uploadPdfToVercelBlob, uploadImageToVercelBlob } from "./action/storage";
 import { processMistralOcr, processMistralImageOcr } from "./action/mistral";
 import { OCRResponse } from "@mistralai/mistralai/src/models/components/ocrresponse.js";
-import OcrResultView from "./components/OcrResultView";
 import UploadResult from "./components/UploadResult";
 import Header from "./components/Header";
 import { useDropzone } from "react-dropzone";
 import Footer from "./components/Footer";
 
+const OcrResultView = dynamic(() => import('./components/OcrResultView'), { ssr: false });
+
 export default function FileUploader() {
+  const [mounted, setMounted] = useState(false);
+  
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   const [file, setFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const [uploadResult, setUploadResult] = useState<{
@@ -36,9 +44,9 @@ export default function FileUploader() {
     return file.type === "application/pdf";
   };
 
-  // Check if file size is valid (under 20MB)
+  // Check if file size is valid (under 100MB)
   const isValidFileSize = (file: File): boolean => {
-    const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20MB in bytes
+    const MAX_FILE_SIZE = 100 * 1024 * 1024; // 100MB in bytes
     return file.size <= MAX_FILE_SIZE;
   };
 
@@ -188,6 +196,18 @@ export default function FileUploader() {
     setOcrResult(null);
     setCurrentStep("upload");
   };
+
+  // 서버사이드 렌더링과 클라이언트 hydration 일치를 위해 로딩 상태 표시
+  if (!mounted) {
+    return (
+      <div className="flex flex-col w-full h-screen items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin h-8 w-8 border-4 border-orange-500 border-t-transparent rounded-full mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   // Initial upload state
   if (currentStep === "upload" && !file) {

@@ -1,0 +1,252 @@
+# docker-compose.prod.yml
+# 프로덕션 환경용 고급 설정
+# 사용법: docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+
+version: '3.8'
+
+services:
+  # PDF to Markdown 애플리케이션
+  pdf2md:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: runner
+    container_name: pdf2md-app
+    restart: always
+    environment:
+      - NODE_ENV=production
+      - NEXT_TELEMETRY_DISABLED=1
+      - UPLOAD_DIR=/app/uploads
+      - MISTRAL_API_KEY=${MISTRAL_API_KEY}
+      # 내부 네트워크에서만 접근 (Nginx를 통해서만)
+    expose:
+      - "3000"
+    volumes:
+      - uploads:/app/uploads
+      - logs:/app/logs
+    # 리소스 제한
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 2G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+    # 로그 설정
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "5"
+    networks:
+      - pdf2md-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Nginx 리버스 프록시 with SSL
+  nginx:
+    image: nginx:alpine
+    container_name: pdf2md-nginx
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      # Nginx 설정
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      # SSL 인증서
+      - certbot-certs:/etc/letsencrypt:ro
+      - certbot-www:/var/www/certbot:ro
+      # 정적 파일 서빙
+      - uploads:/var/www/uploads:ro
+      # 로그
+      - nginx-logs:/var/log/nginx
+    environment:
+      - DOMAIN=${DOMAIN:-your-domain.com}
+      - SERVER_IP=${SERVER_IP:-your.server.ip}
+    depends_on:
+      - pdf2md
+    networks:
+      - pdf2md-network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "3"
+
+  # Let's Encrypt SSL 인증서 자동 갱신
+  certbot:
+    image: certbot/certbot:latest
+    container_name: pdf2md-certbot
+    restart: "no"
+    volumes:
+      - certbot-certs:/etc/letsencrypt
+      - certbot-www:/var/www/certbot
+      - certbot-logs:/var/log/letsencrypt
+    environment:
+      - DOMAIN=${DOMAIN:-your-domain.com}
+      - EMAIL=${SSL_EMAIL:-your-email@domain.com}
+    command: >
+      sh -c "
+        if [ ! -f /etc/letsencrypt/live/${DOMAIN:-your-domain.com}/fullchain.pem ]; then
+          echo 'Obtaining initial SSL certificate...'
+          certbot certonly --webroot --webroot-path=/var/www/certbot --email ${EMAIL:-your-email@domain.com} --agree-tos --no-eff-email -d ${DOMAIN:-your-domain.com}
+        else
+          echo 'SSL certificate already exists, renewing if needed...'
+          certbot renew --quiet
+        fi
+      "
+    profiles:
+      - ssl
+
+  # SSL 인증서 자동 갱신 크론잡
+  certbot-renew:
+    image: certbot/certbot:latest
+    container_name: pdf2md-certbot-renew
+    restart: unless-stopped
+    volumes:
+      - certbot-certs:/etc/letsencrypt
+      - certbot-www:/var/www/certbot
+      - certbot-logs:/var/log/letsencrypt
+    environment:
+      - DOMAIN=${DOMAIN:-your-domain.com}
+    # 매일 오전 2시에 인증서 갱신 시도
+    command: >
+      sh -c "
+        while :; do
+          sleep 12h & wait $${!}
+          certbot renew --quiet --deploy-hook 'nginx -s reload'
+        done
+      "
+    profiles:
+      - ssl
+
+  # 모니터링: Prometheus (선택사항)
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: pdf2md-prometheus
+    restart: unless-stopped
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+      - '--storage.tsdb.retention.time=90d'
+      - '--web.enable-lifecycle'
+    networks:
+      - pdf2md-network
+    profiles:
+      - monitoring
+
+  # 모니터링: Grafana (선택사항)
+  grafana:
+    image: grafana/grafana:latest
+    container_name: pdf2md-grafana
+    restart: unless-stopped
+    ports:
+      - "3001:3000"
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./monitoring/grafana/dashboards:/etc/grafana/provisioning/dashboards:ro
+      - ./monitoring/grafana/datasources:/etc/grafana/provisioning/datasources:ro
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-admin123!}
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_SERVER_DOMAIN=${DOMAIN:-your-domain.com}
+    networks:
+      - pdf2md-network
+    profiles:
+      - monitoring
+
+  # 로그 수집: Loki (선택사항)
+  loki:
+    image: grafana/loki:latest
+    container_name: pdf2md-loki
+    restart: unless-stopped
+    ports:
+      - "3100:3100"
+    volumes:
+      - ./monitoring/loki.yml:/etc/loki/local-config.yaml:ro
+      - loki-data:/loki
+    command: -config.file=/etc/loki/local-config.yaml
+    networks:
+      - pdf2md-network
+    profiles:
+      - monitoring
+
+  # 백업 서비스
+  backup:
+    image: alpine:latest
+    container_name: pdf2md-backup
+    restart: "no"
+    volumes:
+      - uploads:/backup/uploads:ro
+      - certbot-certs:/backup/ssl:ro
+      - ./backups:/backup/output
+      - ./scripts/backup.sh:/backup.sh:ro
+    environment:
+      - BACKUP_RETENTION_DAYS=${BACKUP_RETENTION_DAYS:-30}
+    command: >
+      sh -c "
+        apk add --no-cache tar gzip
+        while :; do
+          /backup.sh
+          sleep 24h
+        done
+      "
+    profiles:
+      - backup
+
+networks:
+  pdf2md-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+
+volumes:
+  uploads:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /home/kihyun/pdf2md/uploads
+  
+  certbot-certs:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /home/kihyun/pdf2md/ssl
+  
+  certbot-www:
+    driver: local
+  
+  certbot-logs:
+    driver: local
+  
+  nginx-logs:
+    driver: local
+  
+  logs:
+    driver: local
+  
+  prometheus-data:
+    driver: local
+  
+  grafana-data:
+    driver: local
+  
+  loki-data:
+    driver: local 

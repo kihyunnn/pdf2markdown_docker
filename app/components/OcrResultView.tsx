@@ -17,6 +17,11 @@ type OcrResultViewProps = {
 };
 
 export default function OcrResultView({ ocrResult, analyzing }: OcrResultViewProps) {
+  const [isClient, setIsClient] = useState(false);
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
   const [visiblePages, setVisiblePages] = useState<number[]>([]);
   const pageRefs = useRef<Record<number, HTMLDivElement | null>>({});
   const containerRef = useRef<HTMLDivElement>(null);
@@ -74,7 +79,7 @@ export default function OcrResultView({ ocrResult, analyzing }: OcrResultViewPro
 
   // ZIPファイルとしてダウンロードする関数
   const handleDownloadZip = async () => {
-    if (!ocrResult || "error" in ocrResult || !ocrResult.pages) return;
+    if (!isClient || !ocrResult || "error" in ocrResult || !ocrResult.pages) return;
 
     try {
       setIsDownloading(true);
