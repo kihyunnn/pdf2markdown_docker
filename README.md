@@ -3,7 +3,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Docker](https://img.shields.io/badge/Docker-Supported-blue)](https://docker.com)
 
-> 📖 **한국어**: [README-ko.md](./README-ko.md) | **日本語**: [README-ja.md](./README-ja.md)
+> 📖 **한국어**: [README-ko.md](./README-ko.md)
 
 A powerful Next.js application that converts PDF files to Markdown using Mistral AI's OCR capabilities. This project supports both Vercel cloud deployment and self-hosted Docker deployment.
 
