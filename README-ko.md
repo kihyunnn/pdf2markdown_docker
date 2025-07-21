@@ -5,14 +5,14 @@
 
 > 📖 **English**: [README.md](./README.md) | **日本語**: [README-ja.md](./README-ja.md)
 
-Mistral AI의 OCR 기능을 사용하여 PDF 파일을 Markdown으로 변환하는 강력한 Next.js 애플리케이션입니다. Vercel 클라우드 배포와 자체 호스팅 Docker 배포를 모두 지원합니다.
+Mistral AI의 OCR 기능을 사용하여 PDF 파일을 Markdown으로 변환하는 강력한 Next.js 애플리케이션입니다. 이 프로젝트는 **로컬 파일 저장소를 사용하는 자체 호스팅 Docker 배포**를 위해 설계되었습니다.
 
 ## 📖 이 프로젝트에 대해
 
 이 프로젝트는 riku ogawa의 [pdf2md](https://github.com/link2004/pdf2md)를 기반으로 다음과 같은 기능을 추가하여 개선한 버전입니다:
 
 - 🐳 **Docker 배포 지원** - nginx 프록시와 함께
-- 📁 **로컬 파일 저장소** - Vercel Blob 대안
+- 📁 **로컬 파일 저장소** - 클라우드 저장소 의존성 제거
 - 🔧 **Nginx Proxy Manager 호환성**
 - 🛡️ **프로덕션 준비 보안 구성**
 - 📊 **모니터링 및 백업 기능**
@@ -29,26 +29,6 @@ Mistral AI의 OCR 기능을 사용하여 PDF 파일을 Markdown으로 변환하�
 - 🐳 **Docker 준비**: Docker Compose로 쉬운 배포
 
 ## 🚀 빠른 시작
-
-### 클라우드 배포 (Vercel)
-
-1. **Mistral AI API 키 획득**
-   - [Mistral AI](https://mistral.ai/)에 방문하여 계정 생성
-   - 대시보드에서 API 키 생성
-
-2. **Vercel Blob 저장소 설정**
-   - 새 Vercel 프로젝트 생성
-   - Storage 탭에서 Blob 저장소 추가
-   - 환경 변수 구성
-
-3. **배포**
-   ```bash
-   git clone https://github.com/link2004/pdf2md.git
-   cd pdf2md
-   cp .env.example .env
-   # MISTRAL_API_KEY와 BLOB_READ_WRITE_TOKEN 추가
-   vercel deploy
-   ```
 
 ### 🐳 Docker 배포 (자체 호스팅)
 
@@ -141,9 +121,6 @@ npm run test:integration
 ### 필수
 - `MISTRAL_API_KEY`: Mistral AI API 키
 
-### Vercel 배포용
-- `BLOB_READ_WRITE_TOKEN`: Vercel Blob 저장소 토큰
-
 ### Docker 배포용
 - `NEXT_PUBLIC_APP_URL`: 도메인 URL
 - `UPLOAD_DIR`: 업로드 디렉토리 경로 (기본값: `/app/uploads`)
@@ -154,13 +131,6 @@ npm run test:integration
 - `BACKUP_RETENTION_DAYS`: 백업 보존 기간 (기본값: 30)
 
 ## 🏗️ 아키텍처
-
-### 클라우드 아키텍처 (Vercel)
-```
-인터넷 → Vercel Edge → Next.js 앱 → Mistral AI
-                     ↓
-                Vercel Blob 저장소
-```
 
 ### 자체 호스팅 아키텍처 (Docker)
 ```

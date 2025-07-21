@@ -5,14 +5,14 @@
 
 > 📖 **한국어**: [README-ko.md](./README-ko.md) | **日本語**: [README-ja.md](./README-ja.md)
 
-A powerful Next.js application that converts PDF files to Markdown using Mistral AI's OCR capabilities. This project supports both Vercel cloud deployment and self-hosted Docker deployment.
+A powerful Next.js application that converts PDF files to Markdown using Mistral AI's OCR capabilities. This project is designed for **self-hosted Docker deployment** with local file storage.
 
 ## 📖 About This Project
 
 This is a modified version of [pdf2md](https://github.com/link2004/pdf2md) by riku ogawa, enhanced with:
 
 - 🐳 **Docker deployment support** with nginx proxy
-- 📁 **Local file storage** (alternative to Vercel Blob)
+- 📁 **Local file storage** (replaces cloud storage dependency)
 - 🔧 **Nginx Proxy Manager compatibility**
 - 🛡️ **Production-ready security configurations**
 - 📊 **Monitoring and backup capabilities**
@@ -29,26 +29,6 @@ This is a modified version of [pdf2md](https://github.com/link2004/pdf2md) by ri
 - 🐳 **Docker Ready**: Easy deployment with Docker Compose
 
 ## 🚀 Quick Start
-
-### Cloud Deployment (Vercel)
-
-1. **Get Mistral AI API Key**
-   - Visit [Mistral AI](https://mistral.ai/) and create an account
-   - Generate an API key from the dashboard
-
-2. **Set up Vercel Blob Storage**
-   - Create a new Vercel project
-   - Add Blob storage in the Storage tab
-   - Configure environment variables
-
-3. **Deploy**
-   ```bash
-   git clone https://github.com/link2004/pdf2md.git
-   cd pdf2md
-   cp .env.example .env
-   # Add your MISTRAL_API_KEY and BLOB_READ_WRITE_TOKEN
-   vercel deploy
-   ```
 
 ### 🐳 Docker Deployment (Self-Hosted)
 
@@ -141,9 +121,6 @@ npm run test:integration
 ### Required
 - `MISTRAL_API_KEY`: Your Mistral AI API key
 
-### For Vercel Deployment
-- `BLOB_READ_WRITE_TOKEN`: Vercel Blob storage token
-
 ### For Docker Deployment
 - `NEXT_PUBLIC_APP_URL`: Your domain URL
 - `UPLOAD_DIR`: Upload directory path (default: `/app/uploads`)
@@ -154,13 +131,6 @@ npm run test:integration
 - `BACKUP_RETENTION_DAYS`: Backup retention period (default: 30)
 
 ## 🏗️ Architecture
-
-### Cloud Architecture (Vercel)
-```
-Internet → Vercel Edge → Next.js App → Mistral AI
-                     ↓
-                Vercel Blob Storage
-```
 
 ### Self-Hosted Architecture (Docker)
 ```

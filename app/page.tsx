@@ -2,7 +2,7 @@
 
 import { useState, useRef, useCallback, useEffect } from "react";
 import dynamic from 'next/dynamic';
-import { uploadPdfToVercelBlob, uploadImageToVercelBlob } from "./action/storage";
+import { uploadPdfToLocalStorage, uploadImageToLocalStorage } from "./action/storage";
 import { processMistralOcr, processMistralImageOcr } from "./action/mistral";
 import { OCRResponse } from "@mistralai/mistralai/src/models/components/ocrresponse.js";
 import UploadResult from "./components/UploadResult";
@@ -65,7 +65,7 @@ export default function FileUploader() {
       }
 
       if (!isValidFileSize(newFile)) {
-        alert("File size exceeds the 20MB limit. Please upload a smaller file.");
+        alert("File size exceeds the 100MB limit. Please upload a smaller file.");
         return;
       }
 
@@ -93,7 +93,7 @@ export default function FileUploader() {
       }
 
       if (!isValidFileSize(selectedFile)) {
-        alert("File size exceeds the 20MB limit. Please upload a smaller file.");
+        alert("File size exceeds the 100MB limit. Please upload a smaller file.");
         return;
       }
 
@@ -124,11 +124,11 @@ export default function FileUploader() {
 
       // Upload based on file type
       if (fileType === "pdf") {
-        result = await uploadPdfToVercelBlob(fileToUpload);
+        result = await uploadPdfToLocalStorage(fileToUpload);
         if (result.error) throw result.error;
         if (result.url) publicUrl = result.url;
       } else {
-        result = await uploadImageToVercelBlob(fileToUpload);
+        result = await uploadImageToLocalStorage(fileToUpload);
         if (result.error) throw result.error;
         if (result.url) publicUrl = result.url;
       }

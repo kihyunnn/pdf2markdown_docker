@@ -28,7 +28,7 @@ async function ensureUploadDir(subDir?: string): Promise<string> {
  * @param filePath File path (if not specified, a UUID-based filename will be generated)
  * @returns Upload result (includes path when successful)
  */
-export async function uploadPdfToVercelBlob(
+export async function uploadPdfToLocalStorage(
   file: File,
   folderName: string = "pdfs",
   filePath?: string
@@ -82,7 +82,7 @@ export async function uploadPdfToVercelBlob(
  * @param filePath File path (if not specified, a UUID-based filename will be generated)
  * @returns Upload result (includes path when successful)
  */
-export async function uploadImageToVercelBlob(
+export async function uploadImageToLocalStorage(
   file: File,
   folderName: string = "images",
   filePath?: string
@@ -142,7 +142,7 @@ export async function getImagePublicUrl(path: string): Promise<string> {
  * @param filePath File path (relative to uploads directory)
  * @returns Delete result
  */
-export async function deleteFileFromVercelBlob(
+export async function deleteFileFromLocalStorage(
   filePath: string
 ): Promise<{ success: boolean; error: Error | null }> {
   try {
@@ -174,7 +174,7 @@ export async function deleteFileFromVercelBlob(
  * @param prefix Folder prefix
  * @returns List of files
  */
-export async function listFilesInVercelBlob(
+export async function listFilesInLocalStorage(
   prefix: string
 ): Promise<{ files: string[]; error: Error | null }> {
   try {
